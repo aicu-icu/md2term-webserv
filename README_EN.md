@@ -8,7 +8,7 @@ An HTTP server that renders Markdown as terminal-friendly text with syntax highl
 
 - **Terminal Rendering** - Converts Markdown to ANSI-colored terminal output
 - **Syntax Highlighting** - Uses Shiki (VS Code's TextMate grammar engine) for code highlighting
-- **Table Support** - Renders beautiful terminal tables with Unicode borders
+- **Table Support** - Renders beautiful terminal tables with Unicode borders, auto-fit to terminal width
 - **Streaming Output** - Character-by-character streaming with typewriter effect
 - **Multiple Themes** - 8 built-in syntax highlighting themes
 - **Simple to Use** - Direct access via HTTP API, no client required
@@ -62,6 +62,9 @@ curl http://localhost:3000/render/demo?theme=nord
 |-----------|-------------|---------|
 | `theme` | Syntax highlighting theme | vitesse-dark |
 | `delay` | Character delay for streaming (ms) | 30 |
+| `autofit` | Auto-fit table columns to terminal width | true |
+| `minWidth` | Minimum table column width (characters) | 10 |
+| `maxWidth` | Maximum table column width (characters) | 50 |
 
 ### Usage Examples
 
@@ -83,6 +86,18 @@ curl -N http://localhost:3000/stream/test?delay=50
 
 # Stream with Dracula theme
 curl -N http://localhost:3000/stream/test?theme=dracula
+
+# Table auto-fit (default)
+curl http://localhost:3000/render/table-demo
+
+# Disable table auto-fit
+curl http://localhost:3000/render/table-demo?autofit=false
+
+# Custom table column width range
+curl http://localhost:3000/render/table-demo?minWidth=15&maxWidth=30
+
+# Fixed table column width
+curl http://localhost:3000/render/table-demo?autofit=false&minWidth=15&maxWidth=15
 ```
 
 ## Supported Themes
@@ -159,7 +174,10 @@ kill -9 <PID>
 
 ### Table Display Issues
 
-Ensure Markdown tables are properly formatted with headers and separator rows.
+1. Ensure Markdown tables are properly formatted with headers and separator rows
+2. If table width exceeds terminal, use `autofit=true` (default) for auto-adjustment
+3. Adjust `minWidth` and `maxWidth` parameters to control column width range
+4. Example: `curl http://localhost:3000/render/table-demo?minWidth=15&maxWidth=30`
 
 ## Development
 

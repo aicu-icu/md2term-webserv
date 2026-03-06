@@ -8,7 +8,7 @@
 
 - **终端渲染** - 将 Markdown 转换为带有 ANSI 颜色代码的终端输出
 - **语法高亮** - 使用 Shiki（VS Code 同款 TextMate 语法引擎）进行代码高亮
-- **表格支持** - 使用 Unicode 边框渲染美观的终端表格
+- **表格支持** - 使用 Unicode 边框渲染美观的终端表格，支持自动宽度适配
 - **流式输出** - 支持逐字符流式传输，模拟打字机效果
 - **多主题支持** - 内置 8 种语法高亮主题
 - **简单易用** - 通过 HTTP API 直接访问，无需客户端
@@ -62,6 +62,9 @@ curl http://localhost:3000/render/demo?theme=nord
 |------|------|--------|
 | `theme` | 语法高亮主题 | vitesse-dark |
 | `delay` | 流式输出字符间隔（毫秒） | 30 |
+| `autofit` | 自动适配表格列宽到终端宽度 | true |
+| `minWidth` | 表格最小列宽（字符数） | 10 |
+| `maxWidth` | 表格最大列宽（字符数） | 50 |
 
 ### 使用示例
 
@@ -83,6 +86,18 @@ curl -N http://localhost:3000/stream/test?delay=50
 
 # 使用 Dracula 主题流式输出
 curl -N http://localhost:3000/stream/test?theme=dracula
+
+# 表格自动适配（默认）
+curl http://localhost:3000/render/table-demo
+
+# 禁用表格自动适配
+curl http://localhost:3000/render/table-demo?autofit=false
+
+# 自定义表格列宽范围
+curl http://localhost:3000/render/table-demo?minWidth=15&maxWidth=30
+
+# 固定表格列宽
+curl http://localhost:3000/render/table-demo?autofit=false&minWidth=15&maxWidth=15
 ```
 
 ## 支持的主题
@@ -159,7 +174,10 @@ kill -9 <PID>
 
 ### 表格显示异常
 
-确保 Markdown 表格格式正确，包含表头和分隔行。
+1. 确保 Markdown 表格格式正确，包含表头和分隔行
+2. 如果表格宽度超出终端，使用 `autofit=true`（默认）自动适配
+3. 调整 `minWidth` 和 `maxWidth` 参数控制列宽范围
+4. 示例：`curl http://localhost:3000/render/table-demo?minWidth=15&maxWidth=30`
 
 ## 开发
 

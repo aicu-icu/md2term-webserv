@@ -104,7 +104,13 @@ async function highlightCode(code, lang, theme = DEFAULT_THEME) {
   }
 }
 
-function renderTable(html) {
+function renderTable(html, options = {}) {
+  const {
+    autoFit = true,
+    minWidth = 10,
+    maxWidth = 50
+  } = options;
+  
   const tableData = [];
   
   const theadMatch = html.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
@@ -145,6 +151,23 @@ function renderTable(html) {
   }
   
   try {
+    let columnWidth = 20;
+    
+    if (autoFit) {
+      const terminalWidth = process.stdout.columns || 80;
+      const columnCount = tableData[0].length;
+      const borderOverhead = columnCount * 3 + 1;
+      const availableWidth = terminalWidth - borderOverhead;
+      columnWidth = Math.min(
+        Math.max(Math.floor(availableWidth / columnCount), minWidth),
+        maxWidth
+      );
+      
+      if (process.env.DEBUG) {
+        console.error(`Table auto-fit: terminal=${terminalWidth}, columns=${columnCount}, width=${columnWidth}`);
+      }
+    }
+    
     const config = {
       border: {
         topBody: '─',
@@ -164,9 +187,9 @@ function renderTable(html) {
         joinRight: '┤'
       },
       columnDefault: {
-        width: 20,
+        width: columnWidth,
         wrapWord: true,
-        truncate: 100
+        truncate: 200
       }
     };
     
@@ -258,7 +281,7 @@ function processNestedLists(html) {
   return result;
 }
 
-async function renderToTerminal(html, theme = DEFAULT_THEME) {
+async function renderToTerminal(html, theme = DEFAULT_THEME, tableOptions = {}) {
   let text = html;
   text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_, content) => {
     return '\n' + chalk.yellow.bold.underline(content) + '\n';
@@ -349,7 +372,7 @@ async function renderToTerminal(html, theme = DEFAULT_THEME) {
   
   while ((tableMatch = tablePattern.exec(text)) !== null) {
     const tableHtml = tableMatch[1];
-    const renderedTable = renderTable(tableHtml);
+    const renderedTable = renderTable(tableHtml, tableOptions);
     text = text.replace(tableMatch[0], renderedTable);
   }
   
@@ -377,7 +400,7 @@ async function renderToTerminal(html, theme = DEFAULT_THEME) {
   return text;
 }
 
-async function streamMarkdown(res, filename, delay, theme) {
+async function streamMarkdown(res, filename, delay, theme, tableOptions = {}) {
   const filePath = path.join(CONTENT_DIR, filename + '.md');
   
   if (!fs.existsSync(filePath)) {
@@ -388,7 +411,7 @@ async function streamMarkdown(res, filename, delay, theme) {
 
   const markdown = fs.readFileSync(filePath, 'utf-8');
   const html = marked.parse(markdown);
-  const terminalText = await renderToTerminal(html, theme);
+  const terminalText = await renderToTerminal(html, theme, tableOptions);
   
   const chars = Array.from(terminalText);
   
@@ -408,7 +431,12 @@ app.get('/stream', async (req, res) => {
   
   const delay = parseInt(req.query.delay) || 30;
   const theme = req.query.theme || DEFAULT_THEME;
-  await streamMarkdown(res, 'demo', delay, theme);
+  const tableOptions = {
+    autoFit: req.query.autofit !== 'false',
+    minWidth: parseInt(req.query.minWidth) || 10,
+    maxWidth: parseInt(req.query.maxWidth) || 50
+  };
+  await streamMarkdown(res, 'demo', delay, theme, tableOptions);
 });
 
 app.get('/stream/:filename', async (req, res) => {
@@ -419,7 +447,12 @@ app.get('/stream/:filename', async (req, res) => {
   
   const delay = parseInt(req.query.delay) || 30;
   const theme = req.query.theme || DEFAULT_THEME;
-  await streamMarkdown(res, req.params.filename, delay, theme);
+  const tableOptions = {
+    autoFit: req.query.autofit !== 'false',
+    minWidth: parseInt(req.query.minWidth) || 10,
+    maxWidth: parseInt(req.query.maxWidth) || 50
+  };
+  await streamMarkdown(res, req.params.filename, delay, theme, tableOptions);
 });
 
 app.get('/render', async (req, res) => {
@@ -429,9 +462,14 @@ app.get('/render', async (req, res) => {
     return;
   }
   const theme = req.query.theme || DEFAULT_THEME;
+  const tableOptions = {
+    autoFit: req.query.autofit !== 'false',
+    minWidth: parseInt(req.query.minWidth) || 10,
+    maxWidth: parseInt(req.query.maxWidth) || 50
+  };
   const markdown = fs.readFileSync(filePath, 'utf-8');
   const html = marked.parse(markdown);
-  const terminalText = await renderToTerminal(html, theme);
+  const terminalText = await renderToTerminal(html, theme, tableOptions);
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.send(terminalText);
 });
@@ -443,9 +481,14 @@ app.get('/render/:filename', async (req, res) => {
     return;
   }
   const theme = req.query.theme || DEFAULT_THEME;
+  const tableOptions = {
+    autoFit: req.query.autofit !== 'false',
+    minWidth: parseInt(req.query.minWidth) || 10,
+    maxWidth: parseInt(req.query.maxWidth) || 50
+  };
   const markdown = fs.readFileSync(filePath, 'utf-8');
   const html = marked.parse(markdown);
-  const terminalText = await renderToTerminal(html, theme);
+  const terminalText = await renderToTerminal(html, theme, tableOptions);
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.send(terminalText);
 });
@@ -481,7 +524,15 @@ app.get('/', (req, res) => {
   <div class="example">
     <code>curl http://localhost:${PORT}/render</code><br>
     <code>curl http://localhost:${PORT}/render/demo</code><br>
-    <code>curl http://localhost:${PORT}/render/demo?theme=github-dark</code>
+    <code>curl http://localhost:${PORT}/render/demo?theme=github-dark</code><br>
+    <code>curl http://localhost:${PORT}/render/demo?autofit=false&minWidth=15&maxWidth=30</code>
+  </div>
+  
+  <h3>表格渲染选项</h3>
+  <div class="example">
+    <code>curl http://localhost:${PORT}/render/table-demo</code><br>
+    <code>curl http://localhost:${PORT}/render/table-demo?autofit=false</code><br>
+    <code>curl http://localhost:${PORT}/render/table-demo?minWidth=20&maxWidth=40</code>
   </div>
   
   <h2>参数说明</h2>
@@ -489,6 +540,9 @@ app.get('/', (req, res) => {
     <li><code>:filename</code> - Markdown文件名（不含扩展名）</li>
     <li><code>delay</code> - 每个字符的延迟（毫秒），默认30ms（仅流式输出）</li>
     <li><code>theme</code> - 代码高亮主题，默认: vitesse-dark</li>
+    <li><code>autofit</code> - 自动适配终端宽度，默认: true</li>
+    <li><code>minWidth</code> - 表格最小列宽，默认: 10</li>
+    <li><code>maxWidth</code> - 表格最大列宽，默认: 50</li>
   </ul>
   
   <h2>支持的主题</h2>

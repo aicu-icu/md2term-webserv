@@ -212,6 +212,9 @@ Use via query parameter: `?theme=nord`
 Query parameters:
 - `theme` - Syntax highlighting theme
 - `delay` - Character delay for streaming (ms, default: 30)
+- `autofit` - Auto-fit table columns to terminal width (default: true)
+- `minWidth` - Minimum table column width (default: 10)
+- `maxWidth` - Maximum table column width (default: 50)
 
 ## Troubleshooting
 
@@ -231,3 +234,9 @@ Ensure theme name matches Shiki's bundled themes exactly (e.g., `one-dark-pro`, 
 
 ### Table rendering issues
 Tables require proper `<thead>` and `<tbody>` structure. Use `marked` to parse markdown tables correctly.
+
+### Table width exceeds terminal width
+1. Use `autofit=true` (default) to auto-adjust column widths to terminal width
+2. Adjust `minWidth` and `maxWidth` parameters to control column width range
+3. Example: `?autofit=false&minWidth=15&maxWidth=30` for fixed column widths
+4. Terminal width is detected via `process.stdout.columns` (defaults to 80 if unavailable)
