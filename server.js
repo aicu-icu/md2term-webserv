@@ -493,6 +493,25 @@ app.get('/render/:filename', async (req, res) => {
   res.send(terminalText);
 });
 
+app.get('/raw/:file', (req, res) => {
+  const file = req.params.file;
+  const filePath = path.resolve(path.join(CONTENT_DIR, file + '.md'));
+
+  if (!filePath.startsWith(CONTENT_DIR)) {
+    res.status(403).send('Forbidden');
+    return;
+  }
+
+  if (!fs.existsSync(filePath)) {
+    res.status(404).send('File not found: ' + file);
+    return;
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send(content);
+});
+
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -526,6 +545,12 @@ app.get('/', (req, res) => {
     <code>curl http://localhost:${PORT}/render/demo</code><br>
     <code>curl http://localhost:${PORT}/render/demo?theme=github-dark</code><br>
     <code>curl http://localhost:${PORT}/render/demo?autofit=false&minWidth=15&maxWidth=30</code>
+  </div>
+  
+  <h3>原始内容</h3>
+  <div class="example">
+    <code>curl http://localhost:${PORT}/raw/demo</code><br>
+    <code>curl http://localhost:${PORT}/raw/README</code>
   </div>
   
   <h3>表格渲染选项</h3>

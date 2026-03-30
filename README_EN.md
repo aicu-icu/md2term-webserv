@@ -35,6 +35,9 @@ The server runs on port 3000 by default (configurable via `PORT` environment var
 # Render default file
 curl http://localhost:3000/render
 
+# Get raw Markdown content
+curl http://localhost:3000/raw/demo
+
 # Streaming output
 curl -N http://localhost:3000/stream
 
@@ -55,6 +58,7 @@ curl http://localhost:3000/render/demo?theme=nord
 | `/render/:filename` | GET | Render specified file (non-streaming) |
 | `/stream` | GET | Stream demo.md character by character |
 | `/stream/:filename` | GET | Stream specified file character by character |
+| `/raw/:file` | GET | Return raw Markdown content (no rendering) |
 
 ### Query Parameters
 
@@ -77,6 +81,9 @@ curl http://localhost:3000/files
 
 # Render specific file
 curl http://localhost:3000/render/test
+
+# Get raw Markdown content
+curl http://localhost:3000/raw/test
 
 # Render with Tokyo Night theme
 curl http://localhost:3000/render/test?theme=tokyo-night

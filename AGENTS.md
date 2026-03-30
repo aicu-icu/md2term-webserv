@@ -128,11 +128,18 @@ app.get('/path/:param', async (req, res) => {
 });
 ```
 
-### Reading a markdown file
+### Reading a markdown file (with path security)
 ```javascript
-const filePath = path.join(CONTENT_DIR, filename + '.md');
+const file = req.params.file;
+const filePath = path.resolve(path.join(CONTENT_DIR, file + '.md'));
+
+if (!filePath.startsWith(CONTENT_DIR)) {
+  res.status(403).send('Forbidden');
+  return;
+}
+
 if (!fs.existsSync(filePath)) {
-  res.status(404).send(chalk.red('File not found: ' + filename));
+  res.status(404).send(chalk.red('File not found: ' + file));
   return;
 }
 const content = fs.readFileSync(filePath, 'utf-8');
@@ -208,6 +215,7 @@ Use via query parameter: `?theme=nord`
 | `/render/:filename` | GET | Render specified file (non-streaming) |
 | `/stream` | GET | Stream demo.md character by character |
 | `/stream/:filename` | GET | Stream specified file character by character |
+| `/raw/:file` | GET | Return raw markdown file content (no rendering) |
 
 Query parameters:
 - `theme` - Syntax highlighting theme

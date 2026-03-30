@@ -35,6 +35,9 @@ npm start
 # 渲染默认文件
 curl http://localhost:3000/render
 
+# 获取原始 Markdown 内容
+curl http://localhost:3000/raw/demo
+
 # 流式输出
 curl -N http://localhost:3000/stream
 
@@ -55,6 +58,7 @@ curl http://localhost:3000/render/demo?theme=nord
 | `/render/:filename` | GET | 渲染指定文件（非流式） |
 | `/stream` | GET | 流式输出 demo.md |
 | `/stream/:filename` | GET | 流式输出指定文件 |
+| `/raw/:file` | GET | 返回原始 Markdown 内容（无渲染） |
 
 ### 查询参数
 
@@ -77,6 +81,9 @@ curl http://localhost:3000/files
 
 # 渲染指定文件
 curl http://localhost:3000/render/test
+
+# 获取原始 Markdown 内容
+curl http://localhost:3000/raw/test
 
 # 使用 Tokyo Night 主题渲染
 curl http://localhost:3000/render/test?theme=tokyo-night
